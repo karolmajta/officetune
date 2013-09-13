@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import random
 import sys
+import os
 import time
 import json
 import subprocess
@@ -10,6 +11,7 @@ import uuid
 
 import requests
 
+DEVNULL = open(os.devnull, 'w')
 
 songs = OrderedDict()
 
@@ -20,39 +22,34 @@ def get_song(api_root):
     song = {
         'uid': d['uid'],
         'url': d['url'],
+        'name': d['name'],
         'filename': None
     }
-    print "fetched", song['url'], "from server"
     return song
 
 
 def delete_remote_song(api_root, song):
     url = "{0}/{1}".format(api_root, song['uid'])
     requests.delete(url)
-    print "deleted", song['url'], "from server"
 
 
 def delete_local_song(song):
+    songs.pop(song['uid'])
     command = "rm {0}".format(song['filename'])
-    subprocess.call(command, shell=True)
-    print "unlinked local file", song['filename']
+    subprocess.call(command, shell=True, stdout=DEVNULL, stderr=DEVNULL)
 
 
 def download_song(song):
-    print "Downloading", song['url']
     fname = "{0}".format(unicode(uuid.uuid4()))
     command = "youtube-dl -x --audio-format wav -o {0}.mp4 {1}".format(fname, song['url'])
-    call_result = subprocess.call(command, shell=True)
+    call_result = subprocess.call(command, shell=True, stdout=DEVNULL, stderr=DEVNULL)
     song['filename'] = "{0}.wav".format(fname)
-    print "Downloaded", song['url'], "as", song['filename']
     return call_result
 
 
 def play_song(song):
-    print "Playing", s['url']
     command = "aplay -f cd \"{0}\"".format(song['filename'])
     call_result = subprocess.call(command, shell=True)
-    print "Finished playing", s['url']
     return call_result
 
 
@@ -93,7 +90,7 @@ if __name__ == "__main__":
         target=keep_downloading_songs,
         args=[api_root]
     )
-    initial_songs = [get_song(api_root) for _ in range(10)]
+    initial_songs = [get_song(api_root) for _ in range(2)]
     for s in initial_songs:
         songs[s['uid']] = s
     music_loop.daemon = True
@@ -101,4 +98,10 @@ if __name__ == "__main__":
     download_loop.daemon = True
     download_loop.start()
     while True:
-        time.sleep(1)
+        time.sleep(5)
+        print
+        for n, song in enumerate(songs.values()):
+            box = "[ ]" if not song['filename'] else "[x]"
+            nowplaying = "<-- NOW" if n == 0 else ""
+            print "\t", str(n+1) + ".", box, song['name'], "\t\t", nowplaying
+        print
