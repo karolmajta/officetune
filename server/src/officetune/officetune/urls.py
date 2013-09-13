@@ -21,12 +21,20 @@ urlpatterns = patterns('',
     url(r'^$',
         officetune.views.song_list,
         name='song_list'),
-    url(r'^vote/(?P<song_id>\d+)',
+    url(r'^vote/(?P<song_id>\d+)$',
         officetune.views.add_vote,
         name='add_vote'),
-    url(r'too-many-votes/$',
+    url(r'^too-many-votes/$',
         TemplateView.as_view(template_name='officetune/too-many-votes.html'),
         name='no_more_votes'),
+                       
+    url(r'^api/next$',
+        officetune.views.NextSong.as_view(),
+    ),
+                       
+    url(r'^api/songs/(?P<uid>\d+)$',
+        officetune.views.DeleteSong.as_view(),
+    ),
 
     url(r'^admin/', include(admin.site.urls)),
 )
