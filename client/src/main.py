@@ -29,7 +29,7 @@ def get_song(api_root):
 
 
 def delete_remote_song(api_root, song):
-    url = "{0}/{1}".format(api_root, song['uid'])
+    url = "{0}/songs/{1}".format(api_root, song['uid'])
     requests.delete(url)
 
 
@@ -42,7 +42,7 @@ def delete_local_song(song):
 def download_song(song):
     fname = "{0}".format(unicode(uuid.uuid4()))
     command = "youtube-dl -x --audio-format wav -o {0}.mp4 {1}".format(fname, song['url'])
-    call_result = subprocess.call(command, shell=True, stdout=DEVNULL, stderr=DEVNULL)
+    call_result = subprocess.call(command, shell=True, stdout=DEVNULL)
     song['filename'] = "{0}.wav".format(fname)
     return call_result
 
@@ -55,7 +55,7 @@ def play_song(song):
 
 def keep_downloading_songs(api_root):
     while True:
-        need_download = filter(lambda s: s['filename'] is None, songs.values())
+	need_download = filter(lambda s: s['filename'] is None, songs.values())
         if len(need_download) == 0:
             time.sleep(1)
             continue
@@ -99,6 +99,9 @@ if __name__ == "__main__":
     download_loop.start()
     while True:
         time.sleep(5)
+        need_extra = songs.values() < 2
+        if need_extra:
+            get_song(api_root)
         print
         for n, song in enumerate(songs.values()):
             box = "[ ]" if not song['filename'] else "[x]"
